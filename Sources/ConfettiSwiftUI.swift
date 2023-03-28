@@ -81,7 +81,8 @@ public struct ConfettiCannon: View {
          closingAngle:Angle = .degrees(120),
          radius:CGFloat = 300,
          repetitions:Int = 0,
-         repetitionInterval:Double = 1.0
+         repetitionInterval:Double = 1.0,
+         shouldAnimateOnZero: Bool = false
     ) {
         self._counter = counter
         var shapes = [AnyView]()
@@ -109,7 +110,8 @@ public struct ConfettiCannon: View {
             closingAngle: closingAngle,
             radius: radius,
             repetitions: repetitions,
-            repetitionInterval: repetitionInterval
+            repetitionInterval: repetitionInterval,
+            shouldAnimateOnZero: shouldAnimateOnZero
         ))
     }
 
@@ -125,8 +127,11 @@ public struct ConfettiCannon: View {
         .onAppear(){
             firstAppear = true
         }
-        .onChange(of: counter){value in
-            if firstAppear{
+        .onChange(of: counter) { value in
+            if firstAppear {
+                guard value > 0 || confettiConfig.shouldAnimateOnZero else {
+                    return
+                }
                 for i in 0...confettiConfig.repetitions{
                     DispatchQueue.main.asyncAfter(deadline: .now() + confettiConfig.repetitionInterval * Double(i)) {
                         animate.append(false)
@@ -269,7 +274,7 @@ struct ConfettiAnimationView: View {
 }
 
 class ConfettiConfig: ObservableObject {
-    internal init(num: Int, shapes: [AnyView], colors: [Color], confettiSize: CGFloat, rainHeight: CGFloat, fadesOut: Bool, opacity: Double, openingAngle:Angle, closingAngle:Angle, radius:CGFloat, repetitions:Int, repetitionInterval:Double) {
+    internal init(num: Int, shapes: [AnyView], colors: [Color], confettiSize: CGFloat, rainHeight: CGFloat, fadesOut: Bool, opacity: Double, openingAngle:Angle, closingAngle:Angle, radius:CGFloat, repetitions:Int, repetitionInterval:Double, shouldAnimateOnZero: Bool) {
         self.num = num
         self.shapes = shapes
         self.colors = colors
@@ -284,6 +289,7 @@ class ConfettiConfig: ObservableObject {
         self.repetitionInterval = repetitionInterval
         self.explosionAnimationDuration = Double(radius / 1300)
         self.rainAnimationDuration = Double((rainHeight + radius) / 200)
+        self.shouldAnimateOnZero = shouldAnimateOnZero
     }
     
     @Published var num:Int
@@ -300,7 +306,7 @@ class ConfettiConfig: ObservableObject {
     @Published var repetitionInterval:Double
     @Published var explosionAnimationDuration:Double
     @Published var rainAnimationDuration:Double
-
+    @Published var shouldAnimateOnZero:Bool
     
     var animationDuration:Double{
         return explosionAnimationDuration + rainAnimationDuration
